@@ -38,8 +38,11 @@ jobs:
       - name: Node version
         id: node
         run: |
-          echo "version=$(node -v)" >> "$GITHUB_OUTPUT"
-          node -v; node -p "process.platform + '-' + process.arch + ' abi ' + process.versions.modules"
+          # bundle the newest official ${NODE_MAJOR}.x on every platform (same ABI as the runner's node used for npm ci)
+          V=$(curl -fsSL https://nodejs.org/dist/index.json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const r=JSON.parse(s).find(x=>x.version.startsWith('v'+process.env.NODE_MAJOR+'.'));console.log(r.version)})")
+          echo "bundled node: $V (runner node: $(node -v))"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          node -p "process.platform + '-' + process.arch + ' abi ' + process.versions.modules"
 
       - name: Build web
         working-directory: web
