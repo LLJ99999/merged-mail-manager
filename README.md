@@ -8,6 +8,28 @@
 ![邮件（暗色 · 紫罗兰种子色）](docs/screenshots/ui2-mail-dark.png)
 ![Liquid Glass + 壁纸取色](docs/screenshots/ui2-glass.png)
 
+## 下载 / Releases
+
+**免安装便携版**（自带 Node.js 运行时，解压即用，无需安装 Node 或执行 npm）：前往 [Releases 页面](https://github.com/LLJ99999/merged-mail-manager/releases/latest) 下载。
+
+| 平台 | 文件 |
+|---|---|
+| Windows x64 | `merged-mail-manager-v<版本>-win-x64.zip` |
+| Linux x64 / ARM64 | `merged-mail-manager-v<版本>-linux-x64.tar.gz` / `-linux-arm64.tar.gz` |
+| macOS Intel / Apple 芯片 | `merged-mail-manager-v<版本>-macos-x64.tar.gz` / `-macos-arm64.tar.gz` |
+
+**运行便携版：**
+
+- **Windows**：解压 zip，双击 `启动.bat`（或 `start.bat`），浏览器自动打开 http://localhost:3000 ；关闭窗口即停止。
+- **Linux**：`tar -xzf merged-mail-manager-v*-linux-x64.tar.gz && cd merged-mail-manager-v*-linux-x64 && ./start.sh`
+- **macOS**：解压后先执行一次 `xattr -dr com.apple.quarantine <解压目录>`（解除 Gatekeeper 隔离，自带的 node 未经 Apple 公证），再双击 `start.command` 或运行 `./start.sh`。
+
+便携版首次启动会从 `.env.example` 生成 `.env`，数据库保存在启动脚本旁的 `data/` 文件夹。**升级**：解压新版本到新文件夹，把旧目录的 `data/` 和 `.env` 复制过去再启动。
+
+**从源码运行**（需要 Node.js 20+）：克隆仓库后 Windows 双击 `start.bat`，macOS 双击 `start.command`，Linux 运行 `./start.sh`；脚本会自动安装依赖、构建前端并启动（详见下方「一键启动」）。
+
+发布流程：推送 `v*` 标签后，GitHub Actions（`.github/workflows/release.yml`）在 Windows / Linux x64 / Linux ARM64 / macOS Intel / macOS ARM 上分别构建前端、编译后端（`server/dist`）、安装对应平台的原生依赖、打包（`scripts/pack-release.sh`）并冒烟测试（`scripts/smoke-test.sh`），然后上传到 Release。
+
 ## 功能
 
 - **概览**：账户 / 缓存 / 代理统计、待处理项（Token 超 60 天未刷新、异常、未使用）、服务商分布、最近取信通道分布、最近邮件
@@ -74,6 +96,11 @@ npm start               # 启动 http://localhost:3000
 其他命令：
 
 ```bash
+npm run build:server    # 编译后端到 server/dist（便携版使用 node server/dist/server.js，无需 tsx）
+```
+
+
+```bash
 npm run typecheck       # server: tsc --noEmit
 npm test                # server: 回退链 / token 轮换 / 导入解析单元测试（全部 mock，不联网）
 cd server && DB_PATH=./data/demo.db npx tsx scripts/seed-demo.ts   # 生成演示数据（虚构账户）
@@ -137,7 +164,7 @@ web/src/components/layout/    Navigation Rail / Navigation Bar / FAB / 背景
 
 本合并版本同样以 MIT License 发布，详见 [LICENSE](LICENSE)，并保留上述原项目的版权声明。
 
-## 一键启动
+## 一键启动（源码版）
 
 需要 Node.js 20+（20 / 22 / 24 均可）。脚本会自动：检查 Node → 生成 `.env` → 首次安装依赖 → 构建前端 → 启动服务并自动打开浏览器。
 
