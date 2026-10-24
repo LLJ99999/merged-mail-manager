@@ -1,0 +1,122 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NODE_MAJOR: '22'
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: win-x64,     os: windows-latest,   ext: zip }
+          - { target: linux-x64,   os: ubuntu-latest,    ext: tar.gz }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, ext: tar.gz }
+          # macos-13 was retired by GitHub in Dec 2025; macos-15-intel is the x64 replacement
+          - { target: macos-x64,   os: macos-15-intel,   ext: tar.gz }
+          - { target: macos-arm64, os: macos-15,         ext: tar.gz }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_MAJOR }}
+
+      - name: Node version
+        id: node
+        run: |
+          echo "version=$(node -v)" >> "$GITHUB_OUTPUT"
+          node -v; node -p "process.platform + '-' + process.arch + ' abi ' + process.versions.modules"
+
+      - name: Build web
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          cat dist/.version
+
+      - name: Compile server
+        working-directory: server
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          test -f dist/server.js
+
+      - name: Unit tests
+        if: matrix.target == 'linux-x64'
+        working-directory: server
+        run: npm test
+
+      - name: Production dependencies (native better-sqlite3 for this OS/arch)
+        working-directory: server
+        run: |
+          rm -rf node_modules
+          npm ci --omit=dev --no-audit --no-fund
+          find node_modules -name '*.node'
+          node -e "const D=require('better-sqlite3'); console.log(new D(':memory:').prepare('select sqlite_version() v').get())"
+
+      - name: Pack
+        run: bash scripts/pack-release.sh "${{ matrix.target }}" "${{ steps.node.outputs.version }}"
+
+      - name: Smoke test (unpacked archive)
+        run: |
+          NAME="merged-mail-manager-v$(head -1 VERSION | tr -d '\r ')-${{ matrix.target }}"
+          rm -rf "$RUNNER_TEMP/smoke" && mkdir -p "$RUNNER_TEMP/smoke"
+          if [ "${{ matrix.ext }}" = zip ]; then
+            7z x -y -o"$RUNNER_TEMP/smoke" "release/$NAME.zip" >/dev/null
+          else
+            tar -xzf "release/$NAME.tar.gz" -C "$RUNNER_TEMP/smoke"
+            test -x "$RUNNER_TEMP/smoke/$NAME/start.sh"
+            test -x "$RUNNER_TEMP/smoke/$NAME/node/bin/node"
+          fi
+          bash scripts/smoke-test.sh "$RUNNER_TEMP/smoke/$NAME" 3999
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg-${{ matrix.target }}
+          path: release/merged-mail-manager-*.${{ matrix.ext }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pkg-*
+          path: release
+          merge-multiple: true
+      - name: Checksums
+        working-directory: release
+        run: |
+          sha256sum merged-mail-manager-* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Release notes
+        id: notes
+        run: |
+          f="docs/releases/${GITHUB_REF_NAME}.md"
+          [ -f "$f" ] || { echo "Release ${GITHUB_REF_NAME}" > /tmp/notes.md; f=/tmp/notes.md; }
+          echo "file=$f" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }} · 多邮箱管理器便携版
+          body_path: ${{ steps.notes.outputs.file }}
+          files: |
+            release/merged-mail-manager-*
+            release/SHA256SUMS.txt
+          fail_on_unmatched_files: true

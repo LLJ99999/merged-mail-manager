@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Mail Manager · 多邮箱管理器</title>
+    <script>
+      // 首帧应用缓存的 Monet 配色与暗色/玻璃模式，避免闪烁
+      (function () {
+        try {
+          var a = JSON.parse(localStorage.getItem('mm-appearance') || '{}');
+          var mode = a.mode || localStorage.getItem('theme') || 'system';
+          var d = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          if (d) root.classList.add('dark');
+          if (a.glass) root.classList.add('glass');
+          if (a.showWallpaper !== false && localStorage.getItem('mm-wallpaper')) root.classList.add('has-wallpaper');
+          root.style.colorScheme = d ? 'dark' : 'light';
+          var css = JSON.parse(localStorage.getItem('mm-theme-css') || 'null');
+          if (css) root.setAttribute('style', (d ? css.dark : css.light) + ';color-scheme:' + (d ? 'dark' : 'light'));
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

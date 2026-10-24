@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * 设计系统：Material You (M3) 动态取色 + 可选 Liquid Glass
+ * 所有颜色均来自 src/lib/monet.ts 生成的 CSS 变量（"R G B" 通道），此处只给出首帧兜底值（#4285F4 种子 / Tonal Spot）。
+ */
+@layer base {
+  :root {
+    --primary: 0 90 195; --on-primary: 255 255 255; --primary-container: 216 226 255; --on-primary-container: 0 26 65; --inverse-primary: 174 198 255;
+    --secondary: 87 94 113; --on-secondary: 255 255 255; --secondary-container: 219 226 249; --on-secondary-container: 20 27 44;
+    --tertiary: 113 85 115; --on-tertiary: 255 255 255; --tertiary-container: 251 215 252; --on-tertiary-container: 41 19 45;
+    --error: 186 26 26; --on-error: 255 255 255; --error-container: 255 218 214; --on-error-container: 65 0 2;
+    --success: 44 106 52; --on-success: 255 255 255; --success-container: 173 243 172; --on-success-container: 0 33 7;
+    --warning: 126 87 0; --on-warning: 255 255 255; --warning-container: 255 222 166; --on-warning-container: 40 25 0;
+    --surface: 249 249 255; --surface-dim: 217 217 224; --surface-bright: 249 249 255; --surface-variant: 225 226 236;
+    --surface-container-lowest: 255 255 255; --surface-container-low: 243 243 250; --surface-container: 237 237 244;
+    --surface-container-high: 231 232 238; --surface-container-highest: 226 226 233;
+    --on-surface: 26 27 32; --on-surface-variant: 68 71 79; --inverse-surface: 47 48 54; --inverse-on-surface: 240 240 247;
+    --outline: 116 119 127; --outline-variant: 196 198 208; --surface-tint: 0 90 195; --scrim: 0 0 0; --shadow: 0 0 0;
+
+    --glass-alpha: 0.6;
+    --glass-blur: 28px;
+    --glass-edge: inset 0 1px 0 0 rgb(255 255 255 / 0.65), inset 0 0 0 1px rgb(255 255 255 / 0.28), inset 0 -1px 0 0 rgb(255 255 255 / 0.12);
+    --glass-shadow: 0 10px 40px -12px rgb(var(--shadow) / 0.22), 0 2px 6px -2px rgb(var(--shadow) / 0.08);
+    --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.28) 0%, rgb(255 255 255 / 0.06) 38%, rgb(255 255 255 / 0) 60%);
+  }
+  .dark {
+    --glass-alpha: 0.52;
+    --glass-edge: inset 0 1px 0 0 rgb(255 255 255 / 0.16), inset 0 0 0 1px rgb(255 255 255 / 0.08), inset 0 -1px 0 0 rgb(0 0 0 / 0.25);
+    --glass-shadow: 0 12px 44px -12px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.3);
+    --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.02) 40%, rgb(255 255 255 / 0) 60%);
+  }
+
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-surface text-body-m text-on-surface antialiased;
+    font-feature-settings: 'tnum' 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection { background: rgb(var(--primary) / 0.22); }
+  :focus-visible { outline: 2px solid rgb(var(--primary)); outline-offset: 2px; border-radius: 12px; }
+  input:focus-visible, textarea:focus-visible, select:focus-visible { outline: none; }
+}
+
+@layer components {
+  /* ---------- 色调表面（tonal surfaces，取代 1px 边框） ---------- */
+  .sf-lowest { background-color: rgb(var(--surface-container-lowest)); }
+  .sf-low { background-color: rgb(var(--surface-container-low)); }
+  .sf { background-color: rgb(var(--surface-container)); }
+  .sf-high { background-color: rgb(var(--surface-container-high)); }
+  .sf-highest { background-color: rgb(var(--surface-container-highest)); }
+
+  .card { @apply rounded-3xl; }
+  .card-header { @apply flex items-center justify-between gap-3 px-5 pb-2 pt-4; }
+  .card-title { @apply text-title-m text-on-surface; }
+  .field-label { @apply mb-1.5 block px-1 text-label-m text-on-surface-variant; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* ---------- Liquid Glass ---------- */
+  .glass .sf-lowest, .glass .sf-low, .glass .sf, .glass .sf-high, .glass .glass-pane {
+    background-image: var(--glass-sheen);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    box-shadow: var(--glass-edge), var(--glass-shadow);
+  }
+  .glass .sf-lowest { background-color: rgb(var(--surface-container-lowest) / calc(var(--glass-alpha) + 0.12)); }
+  .glass .sf-low { background-color: rgb(var(--surface-container-low) / var(--glass-alpha)); }
+  .glass .sf { background-color: rgb(var(--surface-container) / var(--glass-alpha)); }
+  .glass .sf-high { background-color: rgb(var(--surface-container-high) / var(--glass-alpha)); }
+  .glass .sf-highest { background-color: rgb(var(--surface-container-highest) / 0.55); }
+  /* 玻璃内部的玻璃不再叠加模糊，避免双重采样掉帧 */
+  .glass .sf-low .sf-lowest, .glass .sf-low .sf, .glass .sf-low .sf-high,
+  .glass .sf-lowest .sf-low, .glass .sf-lowest .sf-high, .glass .sf .sf-high, .glass .glass-pane .sf-high {
+    -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.10);
+    background-image: none;
+  }
+  /* 不支持 backdrop-filter：退化为实心色调表面，保证可读性 */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass { --glass-alpha: 1; }
+    .glass .sf-lowest, .glass .sf-low, .glass .sf, .glass .sf-high, .glass .glass-pane { background-image: none; }
+  }
+
+  /* ---------- Skeleton shimmer（仅 transform 动画） ---------- */
+  .skeleton { position: relative; overflow: hidden; border-radius: 8px; background: rgb(var(--on-surface) / 0.08); }
+  .skeleton::after {
+    content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(var(--surface-bright) / 0.55), transparent);
+    animation: shimmer 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+}
+
+/* ---------- 应用背景：壁纸或基于调色板的柔和渐变 ---------- */
+.app-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: rgb(var(--surface)); }
+.app-bg .blob { position: absolute; border-radius: 9999px; filter: blur(80px); opacity: 0.55; will-change: transform; }
+.dark .app-bg .blob { opacity: 0.35; }
+.app-bg .wall { position: absolute; inset: -2%; background-size: cover; background-position: center; }
+.app-bg .wall-scrim { position: absolute; inset: 0; background: rgb(var(--surface) / 0.28); }
+.dark .app-bg .wall-scrim { background: rgb(var(--surface) / 0.45); }
+.glass .app-bg .wall-scrim { background: rgb(var(--surface) / 0.12); }
+.dark.glass .app-bg .wall-scrim { background: rgb(var(--surface) / 0.32); }
+
+/* 主题色切换：View Transitions 交叉淡入 */
+html.theme-vt::view-transition-old(root),
+html.theme-vt::view-transition-new(root) { animation-duration: 480ms; animation-timing-function: cubic-bezier(0.2, 0, 0, 1); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgb(var(--on-surface) / 0.16); border-radius: 10px; border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--on-surface) / 0.28); background-clip: content-box; }
+
+@keyframes shimmer { to { transform: translateX(100%); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  html.theme-vt::view-transition-old(root), html.theme-vt::view-transition-new(root) { animation: none; }
+}
+
+/* ---------- 收取分体按钮：玻璃模式下加一道高光描边，与玻璃面板协调 ---------- */
+.glass .fetch-split > button { box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+.dark.glass .fetch-split > button { box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px rgb(255 255 255 / 0.06); }
+
+/* ---------- 批量收取面板：账户列表底部渐隐，提示可滚动（pb-4 保证滚到底时最后一行不被遮） ---------- */
+.batch-list { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); }
+
+/* ---------- 批量收取面板显示时，给普通页面底部留白（AppLayout 的页面容器带 data-page-pad） ---------- */
+html[data-batch-panel='sm'] [data-page-pad] { padding-bottom: 88px; }
+html[data-batch-panel='md'] [data-page-pad] { padding-bottom: 196px; }
+html[data-batch-panel='lg'] [data-page-pad] { padding-bottom: calc(196px + 38vh); }

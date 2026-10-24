@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+server/dist/
+web/dist/
+*.tsbuildinfo
+release/
+
+# runtime data / secrets
+data/
+server/data/
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+
+# test / QA output
+qa-out/
+test-results/
+playwright-report/
+web/e2e/out/
+web/e2e/screens/
+e2e-out/
+*.log
+
+# editor / tool
+.DS_Store
+.omc/
+.claude/
+.vscode/
+.idea/

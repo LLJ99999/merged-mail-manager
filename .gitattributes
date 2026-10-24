@@ -1,0 +1,4 @@
+# keep Windows batch files byte-exact (CRLF, ASCII)
+*.bat -text
+*.sh text eol=lf
+*.command text eol=lf
